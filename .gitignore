@@ -1,2 +1,6 @@
+*.hi
+*.o
 *.swp
 input.txt
+
+02/02-2
