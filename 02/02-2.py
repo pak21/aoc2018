@@ -3,7 +3,7 @@
 import sys
 
 with open(sys.argv[1]) as f:
-    lines = [[c for c in line.rstrip()] for line in f]
+    lines = [line.rstrip() for line in f]
 
 for i in range(0, len(lines)):
     line1 = lines[i]
