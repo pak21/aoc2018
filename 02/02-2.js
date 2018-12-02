@@ -2,16 +2,15 @@
 
 const fs = require('fs');
 
-contents = fs.readFileSync('input.txt', 'utf8');
-lines = contents.split('\n');
+const lines = fs.readFileSync('input.txt', 'utf8').split('\n').map((line) => line.split(''));
 
 for (let i = 0; i < lines.length; i++) {
-  const chars1 = lines[i].split('');
+  const line1 = lines[i];
   for (let j = 0; j < i; j++) {
-    const chars2 = lines[j].split('');
+    const line2 = lines[j];
     // The map() call here is a zip function
-    const matches = chars1.map((c, i) => [c, chars2[i]]).filter(pair => pair[0] == pair[1]);
-    if (matches.length == chars1.length - 1) {
+    const matches = line1.map((c, k) => [c, line2[k]]).filter(pair => pair[0] == pair[1]);
+    if (matches.length == line1.length - 1) {
       console.log(matches.map((pair) => pair[0]).join(''));
     }
   }
