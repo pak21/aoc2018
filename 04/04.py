@@ -14,16 +14,13 @@ asleep = collections.defaultdict(lambda: 0)
 whenasleep = collections.defaultdict(lambda: collections.defaultdict(lambda: 0))
 
 with open(sys.argv[1]) as f:
-    for line in f:
-        matches = pattern.match(line).groups()
-        events.append((wholedate, int(minute), eventstring))
+    events = [(m, e) for _, m, e in sorted([(lambda t: (t[0], int(t[1]), t[2]))(pattern.match(line).groups()) for line in f], key=lambda t: t[0])]
 
-events = sorted(events, key=lambda x: x[0])
+eventswithlast = [(l, m, e) for (l, _), (m, e) in zip([(None, None)] + events, events)]
 
 guard = None
-lastminute = None
-for event in events:
-    wholedate, minute, eventstring = event
+for event in eventswithlast:
+    lastminute, minute, eventstring = event
     if eventstring == 'wakes up': 
         asleep[guard] += minute - lastminute
         for i in range(lastminute, minute):
@@ -32,8 +29,6 @@ for event in events:
         pass
     else:
         guard = int(guardpattern.match(eventstring).group(1))
-
-    lastminute = minute
 
 # Part 1
 
