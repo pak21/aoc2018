@@ -6,7 +6,7 @@ import operator
 import re
 import sys
 
-pattern = re.compile(r'\[(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})\] (.*)')
+pattern = re.compile(r'\[(.*:(\d+))\] (.*)')
 guardpattern = re.compile(r'Guard #(\d+) begins shift')
 
 events = []
@@ -16,37 +16,24 @@ whenasleep = collections.defaultdict(lambda: collections.defaultdict(lambda: 0))
 with open(sys.argv[1]) as f:
     for line in f:
         matches = pattern.match(line).groups()
-        year, month, day, hour, minute, eventstring = matches
-        eventtime = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
-        if eventstring == 'wakes up':
-            event = -1
-        elif eventstring == 'falls asleep':
-            event = -2
-        else:
-            event = int(guardpattern.match(eventstring).group(1))
-        events.append((eventtime, event))
+        events.append((wholedate, int(minute), eventstring))
 
 events = sorted(events, key=lambda x: x[0])
 
 guard = None
 lastminute = None
 for event in events:
-    eventtime, eventtype = event
-    if eventtype > 0:
-        guard = event[1]
-    if eventtime.hour == 23:
-        eventtime += datetime.timedelta(minutes=60-eventtime.minute)
-
-    if eventtype == -1:
-        #print('Guard {} asleep from {} to {}'.format(guard, lastminute, eventtime.minute))
-        asleep[guard] += eventtime.minute - lastminute
-        for i in range(lastminute, eventtime.minute):
+    wholedate, minute, eventstring = event
+    if eventstring == 'wakes up': 
+        asleep[guard] += minute - lastminute
+        for i in range(lastminute, minute):
             whenasleep[guard][i] += 1
-    elif eventtype == -2:
-        #print('Guard {} awake from {} to {}'.format(guard, lastminute, eventtime.minute))
+    elif eventstring == 'falls asleep':
         pass
+    else:
+        guard = int(guardpattern.match(eventstring).group(1))
 
-    lastminute = eventtime.minute
+    lastminute = minute
 
 # Part 1
 
