@@ -1,57 +1,44 @@
 #!/usr/bin/python3
 
-import collections
-import datetime
-import operator
 import re
+import string
 import sys
 
 pattern = re.compile('Step (.) must be finished before step (.) can begin\.')
 
-dependencies = collections.defaultdict(set)
+dependencies = {c: set() for c in string.ascii_uppercase}
 
 with open(sys.argv[1]) as f:
     for line in f:
-        x, y = pattern.match(line).groups()
-        dependencies[y].add(x)
-        if x not in dependencies:
-            dependencies[x] = set()
+        before, after = pattern.match(line).groups()
+        dependencies[after].add(before)
 
-answer = ''
 time = 0
 
-workers = 5
+worker_count = 5
 extra_time = 60
 
-worker_finish_at = [None] * workers
-worker_doing = [None] * workers
+workers = [(None, None)] * worker_count
 being_worked = set()
-while True:
-    for i in range(0, workers):
-        if worker_finish_at[i] == time:
-            finished = worker_doing[i]
-            answer += finished
-            print('Time {}: worker {} finished step {}'.format(time, i, finished))
-            worker_doing[i] = None
-            worker_finish_at[i] = None
+
+while dependencies:
+    for i in range(worker_count):
+        if workers[i][1] == time:
+            finished = workers[i][0]
+            workers[i] = (None, None)
 
             del dependencies[finished]
-            for k in dependencies.keys():
-                dependencies[k].discard(finished)
+            for v in dependencies.values():
+                v.discard(finished)
 
-            print('Time {}: {} jobs left to do'.format(time, len(dependencies)))
-
-            if not len(dependencies):
-                print(answer)
-                sys.exit(0)
-
-    for i in range(0, workers):
-        if worker_doing[i] == None:
+    for i in range(worker_count):
+        if workers[i][0] == None:
             canrun = sorted([k for k, v in dependencies.items() if not len(v) and k not in being_worked])
             if canrun:
                 willrun = canrun[0]
-                worker_finish_at[i] = time + extra_time + ord(willrun) - 64
-                worker_doing[i] = willrun
+                workers[i] = (willrun, time + extra_time + ord(willrun) - 64)
                 being_worked.add(willrun)
-                print('Time {}: worker {} doing {}, will finish at {}'.format(time, i, worker_doing[i], worker_finish_at[i]))
+
     time += 1
+
+print(time - 1)

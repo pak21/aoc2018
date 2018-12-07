@@ -1,31 +1,24 @@
 #!/usr/bin/python3
 
-import collections
-import datetime
-import operator
 import re
+import string
 import sys
 
 pattern = re.compile('Step (.) must be finished before step (.) can begin\.')
 
-dependencies = collections.defaultdict(set)
+dependencies = {c: set() for c in string.ascii_uppercase}
 
 with open(sys.argv[1]) as f:
     for line in f:
-        x, y = pattern.match(line).groups()
-        dependencies[y].add(x)
-        if x not in dependencies:
-            dependencies[x] = set()
+        before, after = pattern.match(line).groups()
+        dependencies[after].add(before)
 
 answer = ''
-try:
-    while True:
-        canrun = sorted([k for k, v in dependencies.items() if not len(v)])
-        willrun = canrun[0]
+while dependencies:
+    willrun = sorted([k for k, v in dependencies.items() if not len(v)])[0]
+    answer += willrun
+    del dependencies[willrun]
+    for v in dependencies.values():
+        v.discard(willrun)
 
-        answer += willrun
-        del dependencies[willrun]
-        for k in dependencies.keys():
-            dependencies[k].discard(willrun)
-except:
-    print(answer)
+print(answer)
