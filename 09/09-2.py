@@ -22,8 +22,7 @@ with open(sys.argv[1]) as f:
     for line in f:
         players, marbles = [int(x) for x in line.split()]
 
-        start = Marble(0)
-        marble = start
+        marble = Marble(0)
         scores = [0] * players
         for i in range(1, marbles + 1):
             if i % 23 == 0:
