@@ -1,6 +1,6 @@
 *.hi
 *.o
 *.swp
-input.txt
+input*.txt
 
 02/02-2
