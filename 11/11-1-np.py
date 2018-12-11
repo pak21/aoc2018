@@ -7,9 +7,9 @@ serial = 2694
 
 def powerlevel(x, y):
     rackid = x + 11
-    return ((((rackid * (y + 1) + serial) * rackid) % 1000) // 100) - 5
+    return (rackid * (y + 1) + serial) * rackid
 
-grid = np.fromfunction(powerlevel, (cells, cells), dtype=int)
+grid = ((np.fromfunction(powerlevel, (cells, cells), dtype=int) % 1000) // 100) - 5
 sums = np.apply_over_axes(
         lambda a, axis: np.apply_along_axis(
             lambda a: a[0:cells-2] + a[1:cells-1] + a[2:cells],
