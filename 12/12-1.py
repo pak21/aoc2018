@@ -5,9 +5,7 @@ import sys
 
 initialpattern = re.compile(r'initial state: (.*)')
 rulepattern = re.compile(r'(.....) => (.)')
-
-leftremove = re.compile(r'^\.*#')
-rightremove = re.compile(r'#\.*$')
+remove = re.compile(r'^\.*(#.*#)\.*$')
 
 with open(sys.argv[1]) as f:
     state = initialpattern.match(f.readline()).group(1)
@@ -15,30 +13,10 @@ with open(sys.argv[1]) as f:
     rules = dict([rulepattern.match(line).groups() for line in f])
 
 zerooffset = 0
-
 for i in range(20):
-    firsthash = state.index('#')
-    zerooffset += firsthash - 2
-    state = leftremove.sub('#', state)
-    state = rightremove.sub('#', state)
-    state = '....' + state + '....'
-
-    newstate = ''
-
-    for j in range(2, len(state)-2):
-        segment = state[j-2:j+3]
-        if segment in rules:
-            newstate += rules[segment]
-        else:
-            newstate += '.'
-
+    zerooffset += state.index('#') - 2
+    state = '....' + remove.sub(r'\1', state) + '....'
+    newstate = ''.join([rules[state[j:j+5]] for j in range(len(state)-4)])
     state = newstate
-    print(state)
 
-total = 0
-for i in range(len(state)):
-    if state[i] == '#':
-        total += i + zerooffset
-
-print(zerooffset)
-print(total)
+print(sum([i + zerooffset for i, c in enumerate(state) if c == '#']))

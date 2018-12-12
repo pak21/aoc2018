@@ -5,9 +5,7 @@ import sys
 
 initialpattern = re.compile(r'initial state: (.*)')
 rulepattern = re.compile(r'(.....) => (.)')
-
-leftremove = re.compile(r'^\.*#')
-rightremove = re.compile(r'#\.*$')
+remove = re.compile(r'^\.*(#.*#)\.*$')
 
 with open(sys.argv[1]) as f:
     state = initialpattern.match(f.readline()).group(1)
@@ -20,34 +18,16 @@ seenstates = set()
 generations = 0
 while True:
     generations += 1
-    firsthash = state.index('#')
-    zerooffset += firsthash - 2
-    state = leftremove.sub('#', state)
-    state = rightremove.sub('#', state)
-    state = '....' + state + '....'
+    zerooffset += state.index('#') - 2
+    state = '....' + remove.sub(r'\1', state) + '....'
 
-    newstate = ''
-
-    for j in range(2, len(state)-2):
-        segment = state[j-2:j+3]
-        if segment in rules:
-            newstate += rules[segment]
-        else:
-            newstate += '.'
-
-    state = newstate
-
-    score = 0
-    for i in range(len(state)):
-        if state[i] == '#':
-            score += i + zerooffset
+    state = ''.join([rules[state[j:j+5]] for j in range(len(state)-4)])
+    score = sum([i + zerooffset for i, c in enumerate(state) if c == '#'])
 
     if state in seenstates:
         break
 
     seenstates.add(state)
-
     lastscore = score
 
-answer = score + (score - lastscore) * (50000000000 - generations)
-print(answer)
+print(score + (score - lastscore) * (50000000000 - generations))
