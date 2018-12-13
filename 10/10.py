@@ -10,20 +10,19 @@ with open(sys.argv[1]) as f:
     particles = [[int(x) for x in pattern.match(line).groups()] for line in f]
 
 lastr = 9999999
-time = -2
+time = -1
 while True:
-    time += 1
     minx = min(particles, key=itemgetter(0))[0]
     maxx = max(particles, key=itemgetter(0))[0]
     r = maxx - minx
-    if r <= lastr:
-        lastr = r
-    else:
+    if r > lastr:
         break
 
     for p in particles:
         p[0] += p[2]
         p[1] += p[3]
+    time += 1
+    lastr = r
 
 for p in particles:
     p[0] -= p[2]
@@ -37,14 +36,10 @@ maxy = max(particles, key=itemgetter(1))[1]
 rx = maxx - minx + 1
 ry = maxy - miny + 1
 
-stuff = [None] * ry
-for i in range(miny, maxy + 1):
-    stuff[i - miny] = ['.'] * rx
-
+picture = [ ['.'] * rx for i in range(ry) ]
 for p in particles:
-    stuff[p[1] - miny][p[0] - minx] = 'X'
-
-for row in stuff:
+    picture[p[1] - miny][p[0] - minx] = 'X'
+for row in picture:
     print(''.join(row))
 
 print(time)
