@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import collections
 import re
 import sys
 
@@ -10,16 +11,16 @@ remove = re.compile(r'^\.*(#.*#)\.*$')
 with open(sys.argv[1]) as f:
     state = initialpattern.match(f.readline()).group(1)
     f.readline()
-    rules = dict([rulepattern.match(line).groups() for line in f])
+    rules = collections.defaultdict(lambda: '.', [rulepattern.match(line).groups() for line in f])
 
 zerooffset = 0
 seenstates = set()
-
 generations = 0
+
 while True:
     generations += 1
     zerooffset += state.index('#') - 2
-    state = '....' + remove.sub(r'\1', state) + '....'
+    state = remove.sub(r'....\1....', state)
 
     state = ''.join([rules[state[j:j+5]] for j in range(len(state)-4)])
     score = sum([i + zerooffset for i, c in enumerate(state) if c == '#'])
