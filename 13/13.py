@@ -9,12 +9,12 @@ directions = {'>': 0, '^': 1, '<': 2, 'v': 3}
 with open(sys.argv[1]) as f:
     grid = f.readlines()
 
-carts = [[y, x, directions[grid[y][x]], 0] for y in range(len(grid)) for x in range(len(grid[0])) if grid[y][x] in directions]
+carts = [[y, x, directions[grid[y][x]], 0] for y in range(len(grid)) for x in range(len(grid[y])) if grid[y][x] in directions]
 
-while True:
+while len(carts) > 1:
     carts.sort(key=itemgetter(1, 0))
 
-    todelete = []
+    crashed = []
     for i in range(len(carts)):
         cart = carts[i]
         cart[0] += moves[cart[2]][0]
@@ -30,15 +30,11 @@ while True:
             cart[3] = (cart[3] + 1) % 3
 
         for j in range(len(carts)):
-            if i == j:
-                continue
-            other = carts[j]
-            if cart[0] == other[0] and cart[1] == other[1]:
+            if i != j and cart[0:2] == carts[j][0:2]:
                 print('Crash at {},{}'.format(cart[1], cart[0]))
-                todelete += [i, j]
+                crashed += [i, j]
 
-    for d in sorted(todelete)[::-1]:
-        del carts[d]
-        if len(carts) == 1:
-            print('Final cart is at {},{}'.format(carts[0][1], carts[0][0]))
-            sys.exit(0)
+    for c in sorted(crashed)[::-1]:
+        del carts[c]
+
+print('Final cart is at {},{}'.format(carts[0][1], carts[0][0]))
