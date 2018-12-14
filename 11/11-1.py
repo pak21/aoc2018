@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-import numpy as np
-
 cells = 300
 serial = 2694
 
