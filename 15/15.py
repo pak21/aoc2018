@@ -14,7 +14,7 @@ def create_units(grid):
         row = grid[y]
         for x in range(len(row)):
             if row[x] == 'E' or row[x] == 'G':
-                units.append([x, y, row[x] == 'E', False])
+                units.append([x, y, row[x] == 'E', False, 200])
                 row[x] = '.'
     return units
 
@@ -41,11 +41,12 @@ def generate_paths(path, end, previous):
             newpaths.append((newpath, new))
     return newpaths
 
-def next_to_enemy(this, units):
+def find_enemies(this, units):
+    enemies = []
     for u in units:
         if u[2] != this[2] and (abs(u[0] - this[0]) + abs(u[1] - this[1])) == 1:
-            return True
-    return False
+            enemies.append(u)
+    return enemies
 
 def dump(grid, units):
     picture = [[c for c in row] for row in grid]
@@ -61,13 +62,15 @@ with open(sys.argv[1]) as f:
 
 units = create_units(grid)
 
+rounds = 0
+
 while True:
     dump(grid, units)
     for u in units:
         u[3] = False
 
     while True:
-
+        units = [u for u in units if u[4] > 0]
         units.sort(key=itemgetter(1, 0))
         locations = set([(u[0], u[1]) for u in units])
 
@@ -78,39 +81,52 @@ while True:
         tomove = canmove[0]
         print('To move', tomove)
 
-        if next_to_enemy(tomove, units):
-            print('Not moving, next to enemy')
-            tomove[3] = True
-            continue
+        if not find_enemies(tomove, units):
+            targets = find_targets(units, tomove)
+            if not targets:
+                totalhp = sum([u[4] for u in units])
+                print(rounds, totalhp, rounds * totalhp)
+                sys.exit(0)
+        #    print('Targets', targets)
+            adjacents = find_adjacents(targets)
+        #    print('Adjacents', adjacents)
 
-        targets = find_targets(units, tomove)
-    #    print('Targets', targets)
-        adjacents = find_adjacents(targets)
-    #    print('Adjacents', adjacents)
+            t = (tomove[0], tomove[1])
+            previous_locations = set()
+            previous_locations.add(t)
+            states = [('', t)]
+            done = False
+            while states and not done:
+                newstates = []
+                for state in states:
+                    newstates += generate_paths(state[0], state[1], previous_locations)
+                states = newstates
+                print('Now have', len(states), 'states')
+                print(states)
+                previous_locations |= set([s[1] for s in states])
+                allends = set([s[1] for s in states if s[1] in adjacents])
+                if allends:
+                    done = True
 
-        t = (tomove[0], tomove[1])
-        previous_locations = set()
-        previous_locations.add(t)
-        states = [('', t)]
-        done = False
-        while states and not done:
-            newstates = []
-            for state in states:
-                newstates += generate_paths(state[0], state[1], previous_locations)
-            states = newstates
-            previous_locations |= set([s[1] for s in states])
-            allends = set([s[1] for s in states if s[1] in adjacents])
             if allends:
-                done = True
+                chosen = min(allends, key=itemgetter(1, 0))
+                chosen_states = [s for s in states if s[1] == chosen]
+                best_state = sorted(chosen_states, key=itemgetter(0))[0]
+                chosen_direction = int(best_state[0][0])
 
-        if allends:
-            chosen = min(allends, key=itemgetter(1, 0))
-            chosen_states = [s for s in states if s[1] == chosen]
-            best_state = sorted(chosen_states, key=itemgetter(0))[0]
-            chosen_direction = int(best_state[0][0])
-
-            tomove[0] += directions[chosen_direction][0]
-            tomove[1] += directions[chosen_direction][1]
-            print('Now at', tomove)
+                tomove[0] += directions[chosen_direction][0]
+                tomove[1] += directions[chosen_direction][1]
+    #            print('Now at', tomove)
 
         tomove[3] = True
+        print('Moved to', tomove)
+
+        enemies = find_enemies(tomove, units)
+        if enemies:
+            toattack = min(enemies, key=itemgetter(4))
+            toattack[4] -= 3
+
+    rounds += 1
+
+totalhp = sum([u[4] for u in units])
+print(rounds, totalhp, rounds * totalhp)
