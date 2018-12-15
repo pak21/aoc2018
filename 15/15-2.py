@@ -88,6 +88,7 @@ while True:
             break
 
         tomove = canmove[0]
+#        print('To move', tomove)
 
         if not find_enemies(tomove, units):
             targets = find_targets(units, tomove)
@@ -133,7 +134,10 @@ while True:
         enemies = find_enemies(tomove, units)
         if enemies:
             toattack = min(enemies, key=itemgetter(4))
-            toattack[4] -= 3
+            toattack[4] -= 34 if tomove[2] else 3
+            if toattack[4] < 0 and toattack[2] == True:
+                print('Elf death')
+                sys.exit(0)
 
     rounds += 1
 
