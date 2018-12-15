@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import collections
 from operator import itemgetter
 import sys
 
@@ -29,27 +28,20 @@ def find_adjacents(targets):
             adjacents.add(new)
     return adjacents
 
-def generate_paths(path, end, previous):
-    newpaths = []
+def generate_paths(newstates, position, path, previous):
     for i in range(len(directions)):
         direction = directions[i]
-        new = (end[0] + direction[0], end[1] + direction[1])
+        new = (position[0] + direction[0], position[1] + direction[1])
         if valid_position(new) and new not in previous:
             newpath = path + str(i)
-            newpaths.append((newpath, new))
-    return newpaths
+            if new not in newstates or newpath < newstates[new]:
+                newstates[new] = newpath
 
 def find_enemies(this, units):
     return [u for u in units if u[2] != this[2] and (abs(u[0] - this[0]) + abs(u[1] - this[1])) == 1]
 
-def prune_states(states):
-    foo = collections.defaultdict(list)
-    for state in states:
-        foo[state[1]].append(state[0])
-    return [(min(v), k) for k, v in foo.items()]
-
 with open(sys.argv[1]) as f:
-    grid = [list(r.rstrip()) for r in f.readlines()]
+    grid = [list(r) for r in f.readlines()]
 
 units = create_units(grid)
 
@@ -60,40 +52,39 @@ while True:
         u[3] = False
 
     while True:
-        units = [u for u in units if u[4] > 0]
+        units = [unit for unit in units if unit[4] > 0]
+
         units.sort(key=itemgetter(1, 0))
-        locations = set([(u[0], u[1]) for u in units])
+        locations = set([(unit[0], unit[1]) for unit in units])
 
         canmove = [unit for unit in units if not unit[3]]
         if not canmove:
             break
-
         tomove = canmove[0]
 
         if not find_enemies(tomove, units):
-            targets = [t for t in units if t[2] != tomove[2]]
+            targets = [target for target in units if target[2] != tomove[2]]
             if not targets:
-                totalhp = sum([u[4] for u in units])
+                totalhp = sum([unit[4] for unit in units])
                 print(rounds * totalhp)
                 sys.exit(0)
             
             adjacents = find_adjacents(targets)
 
             previous_locations = set()
-            states = [('', (tomove[0], tomove[1]))]
+            states = {(tomove[0], tomove[1]): ''}
             allends = None
             while states and not allends:
-                previous_locations |= set([s[1] for s in states])
-                newstates = []
-                for state in states:
-                    newstates += generate_paths(state[0], state[1], previous_locations)
-                states = prune_states(newstates)
-                allends = set([s[1] for s in states if s[1] in adjacents])
+                previous_locations |= set(states)
+                newstates = {}
+                for position, path in states.items():
+                    generate_paths(newstates, position, path, previous_locations)
+                states = newstates
+                allends = [s for s in states if s in adjacents]
 
             if allends:
                 chosen = min(allends, key=itemgetter(1, 0))
-                chosen_state = [s for s in states if s[1] == chosen][0]
-                chosen_direction = int(chosen_state[0][0])
+                chosen_direction = int(states[chosen][0])
 
                 tomove[0] += directions[chosen_direction][0]
                 tomove[1] += directions[chosen_direction][1]
