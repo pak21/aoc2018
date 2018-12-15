@@ -3,6 +3,9 @@
 from operator import itemgetter
 import sys
 
+ALLOW_ELF_DEATH = True
+ELF_ATTACK_STRENGTH = 3
+
 directions = [[0, -1], [-1, 0], [1, 0], [0, 1]]
 
 def valid_position(p):
@@ -15,7 +18,7 @@ def create_units(grid):
         for x in range(len(row)):
             if row[x] == 'E' or row[x] == 'G':
                 units.append([x, y, row[x] == 'E', False, 200])
-                row[x] = '.'
+                row[x] = '.' 
     return units
 
 def find_adjacents(targets):
@@ -94,6 +97,9 @@ while True:
         enemies = find_enemies(tomove, units)
         if enemies:
             toattack = min(enemies, key=itemgetter(4))
-            toattack[4] -= 3
+            toattack[4] -= ELF_ATTACK_STRENGTH if tomove[2] else 3
+            if toattack[4] < 0 and toattack[2] and not ALLOW_ELF_DEATH:
+                print('Elf death!')
+                sys.exit(0)
 
     rounds += 1
