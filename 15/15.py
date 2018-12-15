@@ -49,17 +49,7 @@ def find_enemies(this, units):
             enemies.append(u)
     return enemies
 
-def dump(grid, units):
-    picture = [[c for c in row] for row in grid]
-    for unit in units:
-        y = unit[1]
-        x = unit[0]
-        picture[y][x] = 'E' if unit[2] else 'G'
-    for row in picture:
-        print(''.join(row))
-
 def prune_states(states):
-#    print('Pruning', states)
     foo = collections.defaultdict(list)
     for state in states:
         foo[state[1]].append(state[0])
@@ -74,7 +64,6 @@ units = create_units(grid)
 rounds = 0
 
 while True:
-    dump(grid, units)
     for u in units:
         u[3] = False
 
@@ -83,7 +72,7 @@ while True:
         units.sort(key=itemgetter(1, 0))
         locations = set([(u[0], u[1]) for u in units])
 
-        canmove = [unit for unit in units if unit[3] == False]
+        canmove = [unit for unit in units if not unit[3]]
         if not canmove:
             break
 
@@ -93,29 +82,22 @@ while True:
             targets = find_targets(units, tomove)
             if not targets:
                 totalhp = sum([u[4] for u in units])
-                print(rounds, totalhp, rounds * totalhp)
+                print(rounds * totalhp)
                 sys.exit(0)
-        #    print('Targets', targets)
+            
             adjacents = find_adjacents(targets)
-        #    print('Adjacents', adjacents)
 
             t = (tomove[0], tomove[1])
-            previous_locations = set()
-            previous_locations.add(t)
+            previous_locations = set(t)
             states = [('', t)]
-            done = False
-            while states and not done:
+            allends = None
+            while states and not allends:
                 newstates = []
                 for state in states:
                     newstates += generate_paths(state[0], state[1], previous_locations)
-                states = newstates
-#                print('Before pruning, have', len(states), 'states')
-                states = prune_states(states)
-#                print('After pruning, have', len(states), 'states')
+                states = prune_states(newstates)
                 previous_locations |= set([s[1] for s in states])
                 allends = set([s[1] for s in states if s[1] in adjacents])
-                if allends:
-                    done = True
 
             if allends:
                 chosen = min(allends, key=itemgetter(1, 0))
@@ -125,10 +107,8 @@ while True:
 
                 tomove[0] += directions[chosen_direction][0]
                 tomove[1] += directions[chosen_direction][1]
-    #            print('Now at', tomove)
 
         tomove[3] = True
-#        print('Moved to', tomove)
 
         enemies = find_enemies(tomove, units)
         if enemies:
@@ -136,6 +116,3 @@ while True:
             toattack[4] -= 3
 
     rounds += 1
-
-totalhp = sum([u[4] for u in units])
-print(rounds, totalhp, rounds * totalhp)
