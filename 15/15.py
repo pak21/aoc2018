@@ -19,9 +19,6 @@ def create_units(grid):
                 row[x] = '.'
     return units
 
-def find_targets(units, unit):
-    return [t for t in units if t[2] != unit[2]]
-
 def find_adjacents(targets):
     adjacents = set()
     for t in targets:
@@ -43,18 +40,13 @@ def generate_paths(path, end, previous):
     return newpaths
 
 def find_enemies(this, units):
-    enemies = []
-    for u in units:
-        if u[2] != this[2] and (abs(u[0] - this[0]) + abs(u[1] - this[1])) == 1:
-            enemies.append(u)
-    return enemies
+    return [u for u in units if u[2] != this[2] and (abs(u[0] - this[0]) + abs(u[1] - this[1])) == 1]
 
 def prune_states(states):
     foo = collections.defaultdict(list)
     for state in states:
         foo[state[1]].append(state[0])
-    bar = [(min(v), k) for k, v in foo.items()]
-    return bar
+    return [(min(v), k) for k, v in foo.items()]
 
 with open(sys.argv[1]) as f:
     grid = [list(r.rstrip()) for r in f.readlines()]
@@ -79,7 +71,7 @@ while True:
         tomove = canmove[0]
 
         if not find_enemies(tomove, units):
-            targets = find_targets(units, tomove)
+            targets = [t for t in units if t[2] != tomove[2]]
             if not targets:
                 totalhp = sum([u[4] for u in units])
                 print(rounds * totalhp)
@@ -87,23 +79,21 @@ while True:
             
             adjacents = find_adjacents(targets)
 
-            t = (tomove[0], tomove[1])
-            previous_locations = set(t)
-            states = [('', t)]
+            previous_locations = set()
+            states = [('', (tomove[0], tomove[1]))]
             allends = None
             while states and not allends:
+                previous_locations |= set([s[1] for s in states])
                 newstates = []
                 for state in states:
                     newstates += generate_paths(state[0], state[1], previous_locations)
                 states = prune_states(newstates)
-                previous_locations |= set([s[1] for s in states])
                 allends = set([s[1] for s in states if s[1] in adjacents])
 
             if allends:
                 chosen = min(allends, key=itemgetter(1, 0))
-                chosen_states = [s for s in states if s[1] == chosen]
-                best_state = sorted(chosen_states, key=itemgetter(0))[0]
-                chosen_direction = int(best_state[0][0])
+                chosen_state = [s for s in states if s[1] == chosen][0]
+                chosen_direction = int(chosen_state[0][0])
 
                 tomove[0] += directions[chosen_direction][0]
                 tomove[1] += directions[chosen_direction][1]
