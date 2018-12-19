@@ -4,9 +4,8 @@ import collections
 import re
 import sys
 
-def dump():
-    for row in grid:
-        print(''.join(row))
+TIME_TO_STABILISE = 1000
+TARGET_TIME = 1000000000
 
 def evolve(y, x):
     old = grid[y][x]
@@ -54,10 +53,11 @@ def score():
     return t * l
 
 with open(sys.argv[1]) as f:
-    grid = [[c for c in row.rstrip()] for row in f]
+    grid = [list(row.rstrip()) for row in f]
 
 generations = 0
-while generations < 1000:
+scores = []
+while True:
     newgrid = [None] * len(grid)
     for y in range(len(grid)):
         row = grid[y]
@@ -66,7 +66,17 @@ while generations < 1000:
             newgrid[y][x] = evolve(y, x)
     grid = newgrid
     generations += 1
-    print(generations, score())
-
-dump()
-print(score())
+    if generations % 100 == 0:
+        print('Done {} generations'.format(generations))
+    if generations == 10:
+        print('Part 1 answer: {}'.format(score()))
+    elif generations == TIME_TO_STABILISE:
+        scores.append(score())
+    elif generations >= TIME_TO_STABILISE:
+        s = score()
+        scores.append(s)
+        if s == scores[0]:
+            period = generations - TIME_TO_STABILISE
+            offset = (TARGET_TIME - TIME_TO_STABILISE) % period
+            print('Part 2 answer: {}'.format(scores[offset]))
+            break
