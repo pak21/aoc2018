@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import collections
+import heapq
 from operator import itemgetter
 import sys
 
@@ -44,14 +45,14 @@ def try_news(new):
         new_distance = distances[current] + (8 if current[2] != new2[2] else 1)
         if new_distance < distances[new2]:
             distances[new2] = new_distance
-            active[new2] = new_distance
+            heapq.heappush(active, (new_distance, new2))
 
 start = (0, 0, 1)
 target = (tx, ty, 1)
 
 distances = collections.defaultdict(lambda: 8 * (tx + ty))
 distances[start] = 0
-active = {start: 0}
+active = []
 current = start
 
 while current != target:
@@ -59,11 +60,9 @@ while current != target:
         try_news((current[0] - 1, current[1]))
     if current[1] > 0:
         try_news((current[0], current[1] - 1))
-    if current[0] < 80:
-        try_news((current[0] + 1, current[1]))
+    try_news((current[0] + 1, current[1]))
     try_news((current[0], current[1] + 1))
 
-    current = min(active.items(), key=itemgetter(1))[0]
-    del active[current]
+    current = heapq.heappop(active)[1]
 
 print('Part 2: {}'.format(distances[target]))
